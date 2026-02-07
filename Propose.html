@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine? 💖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse-heart {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .pulse-heart {
+            animation: pulse-heart 1.5s ease-in-out infinite;
+        }
+        
+        .falling-heart {
+            position: fixed;
+            font-size: 20px;
+            animation: fall linear forwards;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .toast-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        
+        .toast-exit {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe0f0 50%, #ffd4e8 100%);
+        }
+        
+        body {
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative">
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+    
+    <!-- Main Content -->
+    <div class="text-center relative z-10 max-w-md w-full">
+        <!-- Heart Icon -->
+        <div class="text-8xl mb-8 pulse-heart">
+            ❤️
+        </div>
+        
+        <!-- Question -->
+        <h1 class="text-4xl md:text-5xl font-bold text-pink-600 mb-4 float-animation">
+            Will You Be My Valentine?
+        </h1>
+        
+        <p class="text-lg md:text-xl text-pink-500 mb-12">
+            I've been waiting to ask you this... 💕
+        </p>
+        
+        <!-- Buttons Container -->
+        <div class="flex flex-col items-center gap-6">
+            <button 
+                id="yesBtn" 
+                class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+                style="font-size: 1.125rem;"
+            >
+                Yes! 💖
+            </button>
+            
+            <button 
+                id="noBtn" 
+                class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-6 rounded-full shadow transition-all duration-300"
+            >
+                No
+            </button>
+        </div>
+    </div>
+    
+    <!-- Success Modal (hidden initially) -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-8 md:p-12 max-w-md w-full text-center transform scale-0 transition-transform duration-500" id="modalContent">
+            <div class="text-9xl mb-6">
+                🎉
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-pink-600 mb-4">
+                Yay! 💕
+            </h2>
+            <p class="text-xl text-gray-700 mb-6">
+                You just made me the happiest person alive! ❤️
+            </p>
+            <p class="text-lg text-pink-500">
+                I can't wait to celebrate with you! 🌹
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const successModal = document.getElementById('successModal');
+        const modalContent = document.getElementById('modalContent');
+        const toastContainer = document.getElementById('toastContainer');
+        
+        let yesBtnScale = 1;
+        let noClickCount = 0;
+        const maxToasts = 5;
+        let activeToasts = [];
+        
+        // Romantic pickup lines
+        const pickupLines = [
+            "Are you a magician? Because whenever I look at you, everyone else disappears! ✨",
+            "Do you have a map? I keep getting lost in your eyes! 🗺️",
+            "Is your name Google? Because you have everything I've been searching for! 🔍",
+            "Do you believe in love at first sight, or should I walk by again? 👀",
+            "Are you a camera? Because every time I look at you, I smile! 📸",
+            "If you were a vegetable, you'd be a cute-cumber! 🥒",
+            "Do you have a Band-Aid? Because I just scraped my knee falling for you! 🩹",
+            "Are you made of copper and tellurium? Because you're Cu-Te! 🧪",
+            "Is your dad a boxer? Because you're a knockout! 🥊",
+            "Do you have a sunburn, or are you always this hot? ☀️",
+            "Are you a parking ticket? Because you've got FINE written all over you! 🎫",
+            "If beauty were time, you'd be an eternity! ⏰",
+            "Do you have a pencil? Because I want to erase your past and write our future! ✏️",
+            "Are you a loan? Because you've got my interest! 💰",
+            "Is there an airport nearby, or is that just my heart taking off? ✈️",
+            "I never believed in destiny until the day I met you... now I can't imagine tomorrow without you 🌟",
+            "You're the reason I wake up with a smile and fall asleep with beautiful dreams 💭",
+            "In a room full of art, I'd still stare at you... because you're my masterpiece 🎨",
+            "My heart whispers your name in every beat, like a love song only I can hear 🎵",
+            "You're not just my favorite person, you're my favorite everything 💫",
+            "I could search the whole world and never find someone who makes me feel the way you do 🌍",
+            "Every love song suddenly made sense the moment I met you 🎶",
+            "You're the missing piece I didn't know my heart was searching for 🧩",
+            "I fall for you more and more every single day, like gravity has chosen you for me 🌠",
+            "Your smile is my favorite notification, your happiness my only priority 😊",
+            "I want to be the reason behind your smile, because you're definitely the reason behind mine 🌹",
+            "You make my heart skip a beat, then race to catch up with how much I adore you 💓",
+            "If I could rearrange the alphabet, I'd put U and I together forever ❤️",
+            "You're the poetry I never knew how to write and the song I never knew how to sing 📝",
+            "I didn't choose you, my heart did... and it has impeccable taste 💝",
+            "You're the plot twist I never saw coming, but exactly what my story needed 📖",
+            "Loving you is like breathing... I can't stop, and I don't want to 🌬️",
+            "You're my favorite kind of chaos in this beautifully messy world 🌪️",
+            "I've never been good with words, but with you, my heart speaks volumes 💬",
+            "You're the sweetest adventure my soul has ever embarked upon 🗺️✨",
+            "In my eyes, you're not just beautiful... you're the definition of it 👁️",
+            "You're the sunrise I look forward to and the stars I wish upon 🌅⭐",
+            "My love for you isn't just a feeling, it's a promise that grows stronger each day 🌱",
+            "You turned my ordinary life into the most beautiful fairytale 🏰",
+            "I don't need paradise because I found it in your arms 🌴",
+            "You're the dream I never want to wake up from 😴💕",
+            "Every moment with you feels like the universe conspiring to make me happy 🌌",
+            "You're not just my Valentine, you're my always and forever 💍",
+            "I love you more than yesterday, but less than tomorrow... and that's infinite ♾️",
+            "You make my world colorful in ways I never imagined possible 🌈"
+        ];
+        
+        // Create falling hearts
+        function createFallingHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'falling-heart';
+            heart.textContent = ['❤️', '💕', '💖', '💗', '💓', '💝'][Math.floor(Math.random() * 6)];
+            heart.style.left = Math.random() * 100 + '%';
+            heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+            document.body.appendChild(heart);
+            
+            setTimeout(() => {
+                heart.remove();
+            }, 7000);
+        }
+        
+        // Start falling hearts
+        setInterval(createFallingHeart, 800);
+        
+        // Calculate reading time (average 200 words per minute, ~3 characters per word)
+        function getReadingTime(text) {
+            const wordsPerMinute = 200;
+            const words = text.length / 3;
+            const minutes = words / wordsPerMinute;
+            const seconds = Math.max(3, Math.ceil(minutes * 60));
+            return seconds * 1000;
+        }
+        
+        // Show toast notification
+        function showToast(message) {
+            // Remove oldest toast if we have 5
+            if (activeToasts.length >= maxToasts) {
+                const oldestToast = activeToasts.shift();
+                oldestToast.classList.remove('toast-enter');
+                oldestToast.classList.add('toast-exit');
+                setTimeout(() => oldestToast.remove(), 300);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'bg-pink-500 text-white px-4 py-3 rounded-lg shadow-lg toast-enter';
+            toast.innerHTML = `
+                <p class="text-sm font-medium">${message}</p>
+            `;
+            
+            toastContainer.appendChild(toast);
+            activeToasts.push(toast);
+            
+            const readingTime = getReadingTime(message);
+            
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                const index = activeToasts.indexOf(toast);
+                if (index > -1) {
+                    activeToasts.splice(index, 1);
+                }
+                setTimeout(() => toast.remove(), 300);
+            }, readingTime);
+        }
+        
+        // No button click handler
+        noBtn.addEventListener('click', function() {
+            noClickCount++;
+            yesBtnScale += 0.3;
+            
+            // Increase Yes button size
+            const newFontSize = 1.125 + (noClickCount * 0.2);
+            const newPadding = 3 + (noClickCount * 0.3);
+            yesBtn.style.fontSize = newFontSize + 'rem';
+            yesBtn.style.padding = `${newPadding * 0.25}rem ${newPadding * 0.5 + 2}rem`;
+            yesBtn.style.transform = `scale(1)`;
+            
+            // Show random pickup line
+            const randomLine = pickupLines[Math.floor(Math.random() * pickupLines.length)];
+            showToast(randomLine);
+            
+            // Make No button harder to click (move it around on mobile-friendly way)
+            if (noClickCount > 2) {
+                const maxX = window.innerWidth - noBtn.offsetWidth - 40;
+                const maxY = window.innerHeight - noBtn.offsetHeight - 40;
+                const randomX = Math.random() * maxX;
+                const randomY = Math.random() * maxY;
+                
+                noBtn.style.position = 'fixed';
+                noBtn.style.left = randomX + 'px';
+                noBtn.style.top = randomY + 'px';
+            }
+        });
+        
+        // Yes button click handler
+        yesBtn.addEventListener('click', function() {
+            // Record the YES response with timestamp
+            const responseData = {
+                answer: 'YES',
+                timestamp: new Date().toISOString(),
+                dateString: new Date().toLocaleString(),
+                noClicksBeforeYes: noClickCount
+            };
+            
+            // METHOD 1: Save to localStorage (persists in browser)
+            localStorage.setItem('valentineResponse', JSON.stringify(responseData));
+            
+            // METHOD 2: Log to console (you can check browser developer tools)
+            console.log('💖 SHE SAID YES! 💖');
+            console.log('Response Data:', responseData);
+            
+            // METHOD 3: Uncomment below to send to a webhook/server
+            // Replace 'YOUR_WEBHOOK_URL' with your actual webhook URL (e.g., from webhook.site, Discord, Slack, or your server)
+            /*
+            fetch('YOUR_WEBHOOK_URL', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(responseData)
+            }).then(response => console.log('Notification sent!'))
+              .catch(error => console.error('Error sending notification:', error));
+            */
+            
+            // METHOD 4: Uncomment to send email via FormSubmit (free service)
+            // Replace 'your-email@example.com' with your actual email
+            
+            fetch('https://formsubmit.co/ajax/rk5080976@gmail.com', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: 'Valentine Response',
+                    message: `She said YES at ${responseData.dateString}! She clicked NO ${noClickCount} times before saying yes.`
+                })
+            }).then(response => console.log('Email sent!'))
+              .catch(error => console.error('Error sending email:', error));
+            
+            
+            // METHOD 5: Create a downloadable log (she won't see this)
+            setTimeout(() => {
+                const blob = new Blob([JSON.stringify(responseData, null, 2)], { type: 'text/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'valentine-response.json';
+                // Auto-download is disabled by default, uncomment below to enable
+                // a.click();
+            }, 2000);
+            
+            // Show success modal
+            successModal.classList.remove('hidden');
+            successModal.classList.add('flex');
+            
+            setTimeout(() => {
+                modalContent.style.transform = 'scale(1)';
+            }, 10);
+            
+            // Create celebration hearts
+            for (let i = 0; i < 30; i++) {
+                setTimeout(createFallingHeart, i * 100);
+            }
+        });
+        
+        // Close modal on click
+        successModal.addEventListener('click', function(e) {
+            if (e.target === successModal) {
+                modalContent.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    successModal.classList.add('hidden');
+                    successModal.classList.remove('flex');
+                }, 300);
+            }
+        });
+    </script>
+</body> 
+</html>
