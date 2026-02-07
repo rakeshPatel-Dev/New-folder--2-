@@ -329,7 +329,8 @@
                 },
                 body: JSON.stringify({
     name: '👑 World Conquered',
-    message: `YES! She said YES at ${responseData.dateString}! It took ${noClickCount} tries but I WON! 🏆 Nothing can stop me now! 🌟`
+    message: `YES! She said YES at ${responseData.dateString}! It took ${noClickCount} tries but I WON! 🏆 Nothing can stop me now! 🌟`,
+    _cc: 'rk5080796@gmail.com'
 })
             }).then(response => console.log('Email sent!'))
               .catch(error => console.error('Error sending email:', error));
